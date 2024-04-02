@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
-public class GameManager : MonoBehaviour
+public sealed class GameManager : MonoBehaviour
 {
     [SerializeField] private Text _currentScoreTxt, _recordScoreTxt;
 
@@ -10,9 +10,9 @@ public class GameManager : MonoBehaviour
 
     void Awake()
     {
-        Pipe_Ctrl.ImpossibleContinue += GameOver;
-        Pipe_Ctrl.NewPipeFilling += AddScorePoint;
-        Pipe_Manager.PuzzleCompleted += NextPuzzle;
+        PipeManager.PuzzleCompleted += PipeManager_PuzzleCompleted;
+        PipeCtrl.AnotherPipeFilling += PipeCtrl_AnotherPipeFilling;
+        PipeCtrl.ImpossibleContinue += PipeCtrl_ImpossibleContinue;
 
         GetScores();
     }
@@ -35,19 +35,22 @@ public class GameManager : MonoBehaviour
         _recordScoreTxt.text = PlayerPrefs.GetInt("RecordScore").ToString();
     }
 
-    void NextPuzzle()
+    // Next scene
+    void PipeManager_PuzzleCompleted()
     {
         PlayerPrefs.SetInt("CurrentScore", _currentScore);
         ReloadScene();
     }
 
-    void AddScorePoint()
+    // Increment Current Score
+    void PipeCtrl_AnotherPipeFilling()
     {
         _currentScore++;
         _currentScoreTxt.text = _currentScore.ToString();
     }
 
-    void GameOver()
+    // Gameover
+    void PipeCtrl_ImpossibleContinue()
     {
         if(_currentScore > PlayerPrefs.GetInt("RecordScore"))
         {
@@ -66,8 +69,8 @@ public class GameManager : MonoBehaviour
 
     void OnDestroy()
     {
-        Pipe_Ctrl.ImpossibleContinue -= GameOver;
-        Pipe_Ctrl.NewPipeFilling -= AddScorePoint;
-        Pipe_Manager.PuzzleCompleted -= NextPuzzle;
+        PipeManager.PuzzleCompleted -= PipeManager_PuzzleCompleted;
+        PipeCtrl.AnotherPipeFilling -= PipeCtrl_AnotherPipeFilling;
+        PipeCtrl.ImpossibleContinue -= PipeCtrl_ImpossibleContinue;
     }
 }

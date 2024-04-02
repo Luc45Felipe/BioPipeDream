@@ -1,18 +1,18 @@
 using System;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.UI;
 
-public sealed class Pipe_Ctrl : MonoBehaviour
+public sealed class PipeCtrl : MonoBehaviour
 {
     public static event Action ImpossibleContinue;
-    public static event Action NewPipeFilling;
+    public static event Action AnotherPipeFilling;
 
     [SerializeField] private PipeType _type;
     [SerializeField] private Image _liquidImage;
 
     private bool _isContedByScore;
     private float _fillTime = 3;
-
     [Space(2)]
     [SerializeField] private InspectPoint _inspectPoint, _inspectPoint1;
 
@@ -26,33 +26,33 @@ public sealed class Pipe_Ctrl : MonoBehaviour
             {
                 InspectPoint comeFrom = GetPointWithFullPipe();
 
-                if(comeFrom == null)
-                {
-                    comeFrom = GetStartablePoint();
-
-                    if(comeFrom == null)
-                    {
-                        print("impossible start");
-                    }
-                    else
-                    {
-                        _isFilling = value;
-                        SetFillDirection(comeFrom);
-
-                        if(_isContedByScore)
-                        {
-                            OnNewPipeFilling();
-                        }
-                    }
-                }
-                else
+                if(comeFrom != null)
                 {
                     SetFillDirection(comeFrom);
                     _isFilling = value;
 
                     if(_isContedByScore)
                     {
-                        OnNewPipeFilling();
+                        OnAnotherPipeFilling();
+                    }
+                }
+                else
+                {
+                    comeFrom = GetStartablePoint();
+
+                    if(comeFrom != null)
+                    {
+                        _isFilling = value;
+                        SetFillDirection(comeFrom);
+
+                        if(_isContedByScore)
+                        {
+                            OnAnotherPipeFilling();
+                        }
+                    }
+                    else
+                    {
+                        print("impossible start");
                     }
                 }
             }
@@ -84,7 +84,7 @@ public sealed class Pipe_Ctrl : MonoBehaviour
                     toInspect = (_liquidImage.fillOrigin == Convert.ToInt32(_inspectPoint.flowConfig)) ? _inspectPoint1 : _inspectPoint;
                 }
 
-                Pipe_Ctrl pipeFinded = GetPipeAtPoint(toInspect);
+                PipeCtrl pipeFinded = GetPipeAtPoint(toInspect);
 
                 if(pipeFinded != null)
                 {
@@ -123,8 +123,8 @@ public sealed class Pipe_Ctrl : MonoBehaviour
 
     private InspectPoint GetPointWithFullPipe()
     {
-        Pipe_Ctrl pipeFinded = GetPipeAtPoint(_inspectPoint);
-        Pipe_Ctrl otherPipeFinded = GetPipeAtPoint(_inspectPoint1);
+        PipeCtrl pipeFinded = GetPipeAtPoint(_inspectPoint);
+        PipeCtrl otherPipeFinded = GetPipeAtPoint(_inspectPoint1);
 
         if(pipeFinded != null && IsCompatible(pipeFinded._type, _inspectPoint) && pipeFinded._liquidImage.fillAmount > .9f)
         {
@@ -140,13 +140,13 @@ public sealed class Pipe_Ctrl : MonoBehaviour
         }
     }
 
-    private Pipe_Ctrl GetPipeAtPoint(InspectPoint point)
+    private PipeCtrl GetPipeAtPoint(InspectPoint point)
     {
         Collider2D pipeDetect = Physics2D.OverlapCircle(point.point.position, 10f);
 
         if(pipeDetect != null)
         {
-            Pipe_Ctrl detectFillCtrl = pipeDetect.GetComponent<Pipe_Ctrl>();
+            PipeCtrl detectFillCtrl = pipeDetect.GetComponent<PipeCtrl>();
             return detectFillCtrl;
         }
 
@@ -155,46 +155,19 @@ public sealed class Pipe_Ctrl : MonoBehaviour
 
     private bool IsCompatible(PipeType type, InspectPoint inspectPoint)
     {
-        bool isCompatible;
+        return inspectPoint.Compatibility.HasFlag(TypeToCompatibility(type)) ? true : false;
+    }
 
-        switch ((int)type)
-        {
-            case 0:
-                isCompatible = inspectPoint.horizontal;
-            break;
-
-            case 1:
-                isCompatible = inspectPoint.vertical;
-            break;
-
-            case 2:
-                isCompatible = inspectPoint.rightUp;
-            break;
-
-            case 3:
-                isCompatible = inspectPoint.rightDown;
-            break;
-
-            case 4:
-                isCompatible = inspectPoint.leftUp;
-            break;
-
-            case 5:
-                isCompatible = inspectPoint.leftDown;
-            break;
-
-            default:
-                isCompatible = false;
-            break;
-        }
-
-        return isCompatible;
+    private CompatibilityPipes TypeToCompatibility(PipeType type)
+    {
+        int num = 1 << (int)type;
+        return (CompatibilityPipes)num;
     }
 
     private InspectPoint GetStartablePoint()
     {
-        Pipe_Ctrl pipeFinded = GetPipeAtPoint(_inspectPoint);
-        Pipe_Ctrl otherPipeFinded = GetPipeAtPoint(_inspectPoint1);
+        PipeCtrl pipeFinded = GetPipeAtPoint(_inspectPoint);
+        PipeCtrl otherPipeFinded = GetPipeAtPoint(_inspectPoint1);
 
         if(pipeFinded == null && otherPipeFinded != null)
         {
@@ -222,7 +195,7 @@ public sealed class Pipe_Ctrl : MonoBehaviour
         }
     }
 
-    private bool IsCurvedPipe(Pipe_Ctrl pipe)
+    private bool IsCurvedPipe(PipeCtrl pipe)
     {
         if(pipe._liquidImage.fillMethod == Image.FillMethod.Radial90)
         {
@@ -240,7 +213,7 @@ public sealed class Pipe_Ctrl : MonoBehaviour
         _liquidImage.fillAmount = Mathf.Lerp(0,1, FillValue);
     }
 
-    public void ActiveFastMode()
+    public void ActiveQuickMode()
     {
         _fillTime = 0.1f;
     }
@@ -250,22 +223,40 @@ public sealed class Pipe_Ctrl : MonoBehaviour
         ImpossibleContinue?.Invoke();
     }
 
-    private void OnNewPipeFilling()
+    private void OnAnotherPipeFilling()
     {
-        NewPipeFilling?.Invoke();
+        AnotherPipeFilling?.Invoke();
     }
 
     [System.Serializable]
     public class InspectPoint
     {
         public Transform point;
+        public CompatibilityPipes Compatibility;
         public bool flowConfig;
-        [Space(5)]
-        public bool horizontal;
-        public bool vertical;
-        public bool rightUp;
-        public bool rightDown;
-        public bool leftUp;
-        public bool leftDown;
+    }
+
+    public enum PipeType 
+    { 
+        Horizontal,
+        Vertical,
+        RightToUp,
+        RightToDown,
+        LeftToUp,
+        LeftToDown
+    }
+
+    [Flags]
+    public enum CompatibilityPipes
+    {
+        Horizontal = 1 << 0,
+        Vertical = 1 << 1,
+        RightUp = 1 << 2,
+        RightDown = 1 << 3,
+        LeftUp = 1 << 4,
+        LeftDown = 1 << 5
     }
 }
+
+
+

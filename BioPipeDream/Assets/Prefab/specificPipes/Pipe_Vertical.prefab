@@ -58,22 +58,12 @@ MonoBehaviour:
   _liquidImage: {fileID: 6422879735531662323}
   _inspectPoint:
     point: {fileID: 5403464514173970221}
+    Compatibility: 22
     flowConfig: 0
-    horizontal: 0
-    vertical: 1
-    rightUp: 1
-    rightDown: 0
-    leftUp: 1
-    leftDown: 0
   _inspectPoint1:
     point: {fileID: 6157347214465183688}
+    Compatibility: 42
     flowConfig: 1
-    horizontal: 0
-    vertical: 1
-    rightUp: 0
-    rightDown: 1
-    leftUp: 0
-    leftDown: 1
 --- !u!114 &2794635893223169400
 MonoBehaviour:
   m_ObjectHideFlags: 0

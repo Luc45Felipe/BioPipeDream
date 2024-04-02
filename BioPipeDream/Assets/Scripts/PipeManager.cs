@@ -2,21 +2,24 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 
-public sealed class Pipe_Manager : MonoBehaviour
+public sealed class PipeManager : MonoBehaviour
 {
     public static event Action PuzzleCompleted;
 
+    [SerializeField] private int _fillTime;
+    private const int _fillTimeDefault = 3;
+
     [SerializeField] private List<GameObject> _pipePrefabs;
-    [SerializeField] private Pipe_Ctrl _startPipe;
-    [SerializeField] private Pipe_Ctrl _endPipe;
+    [SerializeField] private PipeCtrl _startPipe;
+    [SerializeField] private PipeCtrl _endPipe;
 
     [SerializeField] private List<GameObject> _slotList = new List<GameObject>();
-    private List<Pipe_Ctrl> _pipeList = new List<Pipe_Ctrl>();
+    private List<PipeCtrl> _pipeList = new List<PipeCtrl>();
 
     void Awake()
     {
-        CreatePipes();
         _startPipe.IsFilling = true;
+        CreatePipes();
     }
 
     private void CreatePipes()
@@ -41,8 +44,8 @@ public sealed class Pipe_Manager : MonoBehaviour
         {
             for (int i = 0; i < _slotList.Count; i++)
             {
-                Pipe_Ctrl newPipe = Instantiate(geratedPipeList[i], _slotList[i].transform.position, Quaternion.identity, _slotList[i].transform).GetComponent<Pipe_Ctrl>();
-                newPipe.SetInitialValues(3, true);
+                PipeCtrl newPipe = Instantiate(geratedPipeList[i], _slotList[i].transform.position, Quaternion.identity, _slotList[i].transform).GetComponent<PipeCtrl>();
+                newPipe.SetInitialValues(_fillTime > 0 ? _fillTime : _fillTimeDefault, true);
                 _pipeList.Add(newPipe);
             }
         }
@@ -70,9 +73,10 @@ public sealed class Pipe_Manager : MonoBehaviour
 
         if(Input.GetKeyDown(KeyCode.DownArrow))
         {
+            print(_fillTime);
             foreach (var pipe in _pipeList)
             {
-                pipe.ActiveFastMode();
+                pipe.ActiveQuickMode();
             }
         }
     }
@@ -81,15 +85,5 @@ public sealed class Pipe_Manager : MonoBehaviour
     {
         PuzzleCompleted?.Invoke();
     }
-}
-
-public enum PipeType 
-{ 
-    Horizontal,
-    Vertical,
-    RightToUp,
-    RightToDown,
-    LeftToUp,
-    LeftToDown
 }
 
